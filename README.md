@@ -1,68 +1,189 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# RenderingReact
+Passing data fetched from sql query to react via node express
 
-## Available Scripts
+If you want to view the code directly and figure out for yourself :
 
-In the project directory, you can run:
+sending data from node - server/routes/index.js
 
-### `npm start`
+fetching data from node - client/src/App.js
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+In this tutorial I will only show how to pass the data from the backend (node - express) to the frontend (react).
+Basic routing knowledge of database connectivity is required.
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+1. Create an express app using the command line or using the auto generator if you use an IDE like WebStorm
+    ```
+    $npx express-generator
+    ```
+2. Create a folder named server and move all the files created by the create-express command to the server folder.
 
-### `npm test`
+3. Go outside the server folder and create a react app with the command like or auto generator whichever you prefer.
+    ```
+    $npx create-react-app my-app
+    ```
+4. Create a folder client and move the all the files and folders created by the above command
+Your directory should look like
+```
+Project-name
+|
+|->Server
+|    |->bin/
+|    |->node_modules/
+|    |->public/
+|    |->routes/
+|    |->views/
+|    |->app.js
+|    |->package.json
+|    |->package-lock.json
+|
+|->Client
+    |->node_modules/
+    |->public/
+    |->src/
+    |->package.json
+    |->package-lock.json
+```
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+5. Open the package.json from the client folder and add the following
+```
+"proxy": "http://localhost:xxxx/"
+```
+replace the xxxx with the port that you are using for your node app
 
-### `npm run build`
+6. Now you are ready to pass data between express and reactjs
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+7. Write the piece of code you use to connect to your database. Select the method GET or POST for transferring data and use the appropriate function for the method. I have called the query function and passed my data to ```result```. Now ```result``` needs to be passed on to the front end. For that use ```response.send(result)```
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+Snapshot of my code :
+```
+router.get('/', function(req, res, next) {
+  res.set('Access-Control-Allow-Origin', '*');
+  con.query(sql,function(err,result){
+    if(err) {
+      throw err;
+    }else{
+      console.log(result);
+      res.send( result);
+    }
+  });
+});
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```
 
-### `npm run eject`
+8. Now open the front end i.e ```client/src/app.js```
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Create a Class component to store the data in the ```state``` of the class.
+```
+class DisplayRows extends React.Component{
+    constructor(props) {
+        super(props);
+        this.state= {
+            data : [],
+        }
+    }
+```
+Use the function ```ComponentDidMount()``` to **call an asynchronous function** to fetch the data after the component is mounted on the DOM.
+``` fetch('http://localhost:8080/');``` is used to fetch the data that we sent from the backend
+store the data into a variable or constant 
+``` const response = await fetch('http://localhost:8080/');```
+I have used await here because I want my code to wait till I get the result and then display it.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+**Note : You can use await only in async functions**
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+The ```response``` stores the fetched data in a raw format. So we need to convert it into a json object to iterate over it and display it.
+Use ```return response.json()``` to send the json object to the parent function.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```
+componentDidMount(){
 
-## Learn More
+        this.callApi()
+            .then(res => {
+                this.setState(
+                    {data : res})
+            })
+            .catch(err=> console.log(err));
+    }
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+    callApi = async()=>
+    {
+        const response = await fetch('http://localhost:8080/');
+        if(response.status !==200) console.log("error");
+        return response.json();
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+    }
+```
+Now in the render function of the Class component, go to ```return``` and use ```{}``` to write the javascript statements we need to iterate through the result.
+    
+We will use a ```map``` function over the object so that we dont need to bother ourselves with the number of entries there are in the fetched query.
+```
+this.state.data.map((row,key)=> {
+  return ()
+})
+```
+Now we will access the data using ```row``` 
+We will need the names of the columns or properties if you are using a NoSQL db like Mongo.
+```
+row.col_name; // in case of SQL 
+row.key_name; // in case of NoSQL
+```
 
-### Code Splitting
+```
+    {
+                        this.state.data.length > 0
+                            ?
+                            this.state.data.map((row,key)=> {
+                                return (<tr>
+                                    <td>{row.first_name}</td>
+                                    <td>{row.last_name}</td>
+                                    <td>{row.mobile_no}</td>
+                                    <td>{row.email_id}</td>
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
+                                </tr>)
+                            }) : 'no data'
+    }
+```
+    
+I am displaying the data in a table hence I am using ```<tr>``` and ```<td>``` tags. You can skip them if you are not using a table.
 
-### Analyzing the Bundle Size
+```
+render(){
+        let x;
+        return(
+            <div >
+                <table>
+                    <thead>
+                    <tr>
+                        <td>
+                            First Name
+                        </td>
+                        <td>
+                            Last Name
+                        </td>
+                        <td>
+                            Mobile Number
+                        </td>
+                        <td>
+                            Email
+                        </td>
+                    </tr>
+                    </thead>
+                    <tbody className="Displaydata">
+                    {
+                        this.state.data.length > 0
+                            ?
+                            this.state.data.map((row,key)=> {
+                                return (<tr>
+                                    <td>{row.first_name}</td>
+                                    <td>{row.last_name}</td>
+                                    <td>{row.mobile_no}</td>
+                                    <td>{row.email_id}</td>
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
+                                </tr>)
+                            }) : 'no data'
+                    }
+                    </tbody>
+                </table>
+            </div>
 
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+        )
+    }
+```
