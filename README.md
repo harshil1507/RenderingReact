@@ -51,6 +51,12 @@ replace the xxxx with the port that you are using for your node app
 
 6. Now you are ready to pass data between express and reactjs
 
+Open a terminal in the server folder to start node server
+use either```nodemon app.js``` or ```node app.js```
+If you use ```node app.js``` you will have to rerun the server after every change that you make.
+
+Open another terminal in the client folder to start react
+use ```npm start``` to initialize react code
 7. Write the piece of code you use to connect to your database. Select the method GET or POST for transferring data and use the appropriate function for the method. I have called the query function and passed my data to ```result```. Now ```result``` needs to be passed on to the front end. For that use ```response.send(result)```
 
 Snapshot of my code :
